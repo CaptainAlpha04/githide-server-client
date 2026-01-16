@@ -1,42 +1,24 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
-import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { useCreateRepository } from '@/hooks/use-api';
 
-interface CreateRepositoryFormProps {
-  userId: string;
-  onSuccess: () => void;
-}
-
-export function CreateRepositoryForm({ userId, onSuccess }: CreateRepositoryFormProps) {
+export function CreateRepositoryForm() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
+  const { mutate: create, isPending } = useCreateRepository();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCreating(true);
-
-    try {
-      await addDoc(collection(db, 'repositories'), {
-        name,
-        description,
-        ownerId: userId,
-        createdAt: new Date().toISOString(),
-        collaborators: [],
-      });
-      toast.success('Repository created successfully');
-      setName('');
-      setDescription('');
-      onSuccess();
-    } catch (error) {
-      toast.error('Failed to create repository');
-      console.error(error);
-    } finally {
-      setIsCreating(false);
-    }
+    create(
+      { name, description },
+      {
+        onSuccess: () => {
+          setName('');
+          setDescription('');
+        }
+      }
+    );
   };
 
   return (
@@ -54,11 +36,10 @@ export function CreateRepositoryForm({ userId, onSuccess }: CreateRepositoryForm
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Repository description"
-          required
         />
       </div>
-      <Button type="submit" disabled={isCreating}>
-        {isCreating ? 'Creating...' : 'Create Repository'}
+      <Button type="submit" disabled={isPending}>
+        {isPending ? 'Creating...' : 'Create Repository'}
       </Button>
     </form>
   );

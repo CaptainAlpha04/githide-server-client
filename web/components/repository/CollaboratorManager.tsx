@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useAddCollaborator, useRemoveCollaborator } from '@/hooks/use-api';
 
 interface CollaboratorManagerProps {
   repositoryId: string;
@@ -17,41 +16,37 @@ export function CollaboratorManager({
   isOwner,
 }: CollaboratorManagerProps) {
   const [email, setEmail] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
+  const addMutation = useAddCollaborator();
+  const removeMutation = useRemoveCollaborator();
 
-  const handleAddCollaborator = async () => {
+  const handleAddCollaborator = () => {
     if (!email) return;
-    setIsAdding(true);
-
-    try {
-      await updateDoc(doc(db, 'repositories', repositoryId), {
-        collaborators: arrayUnion(email),
-      });
-      toast.success('Collaborator added successfully');
-      setEmail('');
-    } catch (error) {
-      toast.error('Failed to add collaborator');
-      console.error(error);
-    } finally {
-      setIsAdding(false);
-    }
+    addMutation.mutate(
+      { repoId: repositoryId, email: email },
+      {
+        onSuccess: () => {
+          toast.success('Collaborator added successfully');
+          setEmail('');
+        },
+        onError: () => {
+          toast.error('Failed to add collaborator');
+        },
+      }
+    );
   };
 
-  const handleRemoveCollaborator = async (collaboratorEmail: string) => {
-    setIsRemoving(true);
-
-    try {
-      await updateDoc(doc(db, 'repositories', repositoryId), {
-        collaborators: arrayRemove(collaboratorEmail),
-      });
-      toast.success('Collaborator removed successfully');
-    } catch (error) {
-      toast.error('Failed to remove collaborator');
-      console.error(error);
-    } finally {
-      setIsRemoving(false);
-    }
+  const handleRemoveCollaborator = (collaboratorEmail: string) => {
+    removeMutation.mutate(
+      { repoId: repositoryId, collaboratorEmail },
+      {
+        onSuccess: () => {
+          toast.success('Collaborator removed successfully');
+        },
+        onError: () => {
+          toast.error('Failed to remove collaborator');
+        },
+      }
+    );
   };
 
   if (!isOwner) return null;
@@ -67,9 +62,9 @@ export function CollaboratorManager({
         />
         <Button
           onClick={handleAddCollaborator}
-          disabled={isAdding || !email}
+          disabled={addMutation.isPending || !email}
         >
-          {isAdding ? 'Adding...' : 'Add'}
+          {addMutation.isPending ? 'Adding...' : 'Add'}
         </Button>
       </div>
 
@@ -86,7 +81,7 @@ export function CollaboratorManager({
                   variant="destructive"
                   size="sm"
                   onClick={() => handleRemoveCollaborator(email)}
-                  disabled={isRemoving}
+                  disabled={removeMutation.isPending}
                 >
                   Remove
                 </Button>

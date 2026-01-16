@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { updateProfile } from 'firebase/auth';
+import { updateUserProfile } from '@/lib/firebase';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -33,6 +34,12 @@ export default function ProfilePage() {
       await updateProfile(auth.currentUser, {
         displayName,
       });
+
+      // Also update the user document in Firestore
+      await updateUserProfile(auth.currentUser.uid, {
+        displayName,
+      });
+
       toast.success('Profile updated successfully');
     } catch (error) {
       toast.error('Failed to update profile');
