@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useUpdateRepository, useDeleteRepository } from '@/hooks/use-api';
 import { CollaboratorManager } from './CollaboratorManager';
 
 interface RepositoryCardProps {
@@ -13,7 +12,6 @@ interface RepositoryCardProps {
   ownerId: string;
   currentUserId: string;
   collaborators: string[];
-  onDelete: () => void;
 }
 
 export function RepositoryCard({
@@ -23,44 +21,46 @@ export function RepositoryCard({
   ownerId,
   currentUserId,
   collaborators,
-  onDelete,
 }: RepositoryCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name);
   const [editedDescription, setEditedDescription] = useState(description);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showCollaborators, setShowCollaborators] = useState(false);
 
   const isOwner = ownerId === currentUserId;
 
-  const handleSave = async () => {
-    try {
-      await updateDoc(doc(db, 'repositories', id), {
+  const updateMutation = useUpdateRepository();
+  const deleteMutation = useDeleteRepository();
+
+  const handleSave = () => {
+    updateMutation.mutate(
+      {
+        repoId: id,
         name: editedName,
         description: editedDescription,
-      });
-      toast.success('Repository updated successfully');
-      setIsEditing(false);
-    } catch (error) {
-      toast.error('Failed to update repository');
-      console.error(error);
-    }
+      },
+      {
+        onSuccess: () => {
+          toast.success('Repository updated successfully');
+          setIsEditing(false);
+        },
+        onError: () => {
+          toast.error('Failed to update repository');
+        },
+      }
+    );
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!confirm('Are you sure you want to delete this repository?')) return;
-    
-    setIsDeleting(true);
-    try {
-      await deleteDoc(doc(db, 'repositories', id));
-      toast.success('Repository deleted successfully');
-      onDelete();
-    } catch (error) {
-      toast.error('Failed to delete repository');
-      console.error(error);
-    } finally {
-      setIsDeleting(false);
-    }
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success('Repository deleted successfully');
+      },
+      onError: () => {
+        toast.error('Failed to delete repository');
+      },
+    });
   };
 
   return (
@@ -99,9 +99,9 @@ export function RepositoryCard({
                 <Button
                   variant="destructive"
                   onClick={handleDelete}
-                  disabled={isDeleting}
+                  disabled={deleteMutation.isPending}
                 >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
+                  {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
                 </Button>
               </>
             )}

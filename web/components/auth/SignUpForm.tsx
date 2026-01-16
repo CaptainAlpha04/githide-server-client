@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, createUserDocument } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,10 @@ export function SignUpForm() {
       await updateProfile(userCredential.user, {
         displayName: name,
       });
+
+      // Create user document in Firestore
+      await createUserDocument(userCredential.user);
+
       toast.success('Account created successfully');
       router.push('/dashboard');
     } catch (error) {
