@@ -108,3 +108,32 @@ export const collaboratorAPI = {
             'DELETE'
         )
 };
+
+// ─── Files API ───────────────────────────────────────────────────────────────
+// Uses the static server token (not Firebase), pointing at the file server
+const FILE_SERVER_URL = process.env.NEXT_PUBLIC_FILE_SERVER_URL || 'http://localhost:8000';
+const FILE_SERVER_TOKEN = process.env.NEXT_PUBLIC_FILE_SERVER_TOKEN || 'githide-default-token-2026';
+
+/**
+ * Encrypted file management — talks directly to the file server
+ */
+export const filesAPI = {
+    /**
+     * List encrypted files stored for a specific repository
+     */
+    list: async (repoId: string): Promise<{ files: string[]; repoId: string; total: number }> => {
+        const response = await fetch(
+            `${FILE_SERVER_URL}/api/v1/repositories/${encodeURIComponent(repoId)}/files`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${FILE_SERVER_TOKEN}`,
+                }
+            }
+        );
+        if (!response.ok) {
+            throw new Error(`Failed to list files: ${response.status}`);
+        }
+        return response.json();
+    }
+};
+

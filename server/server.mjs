@@ -171,6 +171,77 @@ app.get('/api/v1/files', authenticate, async (req, res) => {
     }
 });
 
+// ── Repo-scoped file routes ────────────────────────────────────────────────
+// Files are stored under /storage/<repoId>/<filename>
+
+// List files for a specific repository
+app.get('/api/v1/repositories/:repoId/files', authenticate, async (req, res) => {
+    const { repoId } = req.params;
+    if (repoId.includes('..') || repoId.includes('/')) {
+        return res.status(400).json({ error: 'Invalid repository ID' });
+    }
+    const repoDir = path.join(STORAGE_DIR, repoId);
+    try {
+        if (!existsSync(repoDir)) {
+            return res.json({ files: [], repoId });
+        }
+        const files = await fs.readdir(repoDir);
+        const visibleFiles = files.filter(f => !f.startsWith('.'));
+        res.json({ files: visibleFiles, repoId, total: visibleFiles.length });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to list repository files' });
+    }
+});
+
+// Upload a file to a specific repository
+app.post('/api/v1/repositories/:repoId/files/:filename', authenticate, async (req, res) => {
+    const { repoId, filename } = req.params;
+    if (repoId.includes('..') || repoId.includes('/')) {
+        return res.status(400).json({ error: 'Invalid repository ID' });
+    }
+    if (filename.includes('..') || filename.includes('/')) {
+        return res.status(400).json({ error: 'Invalid filename' });
+    }
+    const repoDir = path.join(STORAGE_DIR, repoId);
+    if (!existsSync(repoDir)) {
+        mkdirSync(repoDir, { recursive: true });
+    }
+    const filePath = path.join(repoDir, filename);
+    try {
+        await fs.writeFile(filePath, req.body);
+        console.log(`Saved file for repo ${repoId}: ${filename}, size: ${req.body.length}`);
+        res.status(201).json({ status: 'uploaded', repoId, filename });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to save file' });
+    }
+});
+
+// Download a file from a specific repository
+app.get('/api/v1/repositories/:repoId/files/:filename', authenticate, async (req, res) => {
+    const { repoId, filename } = req.params;
+    if (repoId.includes('..') || repoId.includes('/')) {
+        return res.status(400).json({ error: 'Invalid repository ID' });
+    }
+    if (filename.includes('..') || filename.includes('/')) {
+        return res.status(400).json({ error: 'Invalid filename' });
+    }
+    const filePath = path.join(STORAGE_DIR, repoId, filename);
+    try {
+        if (!existsSync(filePath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+        const content = await fs.readFile(filePath);
+        res.send(content);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to read file' });
+    }
+});
+
+
+
 app.post('/api/v1/files/:filename', authenticate, async (req, res) => {
     const { filename } = req.params;
     if (filename.includes('..') || filename.includes('/')) {
