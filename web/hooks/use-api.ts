@@ -4,14 +4,16 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { repositoryAPI, collaboratorAPI } from '@/lib/api-client';
+import { repositoryAPI, collaboratorAPI, filesAPI } from '@/lib/api-client';
 import { toast } from 'sonner';
 
 const QUERY_KEYS = {
     repositories: ['repositories'],
     repository: (id: string) => ['repositories', id],
-    collaborators: (repoId: string) => ['collaborators', repoId]
+    collaborators: (repoId: string) => ['collaborators', repoId],
+    repoFiles: (repoId: string) => ['repoFiles', repoId],
 };
+
 
 /**
  * Hook for fetching all repositories
@@ -176,3 +178,17 @@ export const useRemoveCollaborator = () => {
         }
     });
 };
+
+/**
+ * Hook for fetching encrypted files synced to a specific repository
+ */
+export const useRepoFiles = (repoId: string) => {
+    return useQuery({
+        queryKey: QUERY_KEYS.repoFiles(repoId),
+        queryFn: () => filesAPI.list(repoId),
+        enabled: !!repoId,
+        staleTime: 1000 * 30, // 30 seconds — files change more often than repo metadata
+        retry: 1,
+    });
+};
+
