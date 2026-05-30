@@ -16,19 +16,33 @@ export const initializeFirebase = () => {
         let serviceAccount;
         
         if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+            try {
+                serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+            } catch {
+                throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not valid JSON.');
+            }
         } else {
-            // Try to load from file - look in parent directory (project root)
             const keyPath = path.join(__dirname, '..', '..', 'service-account-key.json');
-            
+
             if (!fs.existsSync(keyPath)) {
                 throw new Error(
                     'Firebase service account key not found. ' +
                     'Please provide FIREBASE_SERVICE_ACCOUNT_KEY environment variable or place service-account-key.json in project root.'
                 );
             }
-            
-            serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+
+            try {
+                serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+            } catch {
+                throw new Error(`service-account-key.json at ${keyPath} is not valid JSON.`);
+            }
+        }
+
+        const requiredFields = ['project_id', 'private_key', 'client_email'];
+        for (const field of requiredFields) {
+            if (!serviceAccount[field]) {
+                throw new Error(`Service account key is missing required field: "${field}".`);
+            }
         }
 
         // Initialize Firebase Admin

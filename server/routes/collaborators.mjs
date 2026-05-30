@@ -124,23 +124,21 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Add collaborator
-        await repoRef.update({
-            collaborators: admin.firestore.FieldValue.arrayUnion(email),
-            updatedAt: new Date()
-        });
-
-        // Update collaborator's shared repositories count
+        // Add collaborator and update user stats atomically
         const collaboratorUID = userSnap.docs[0].id;
         const collaboratorRef = db.collection('users').doc(collaboratorUID);
-        const collaboratorSnap = await collaboratorRef.get();
 
-        if (collaboratorSnap.exists()) {
-            const currentShared = collaboratorSnap.data().repositoriesShared || 0;
-            await collaboratorRef.update({
-                repositoriesShared: currentShared + 1
+        await db.runTransaction(async (tx) => {
+            const collaboratorSnap = await tx.get(collaboratorRef);
+            tx.update(repoRef, {
+                collaborators: admin.firestore.FieldValue.arrayUnion(email),
+                updatedAt: new Date()
             });
-        }
+            if (collaboratorSnap.exists) {
+                const currentShared = collaboratorSnap.data().repositoriesShared || 0;
+                tx.update(collaboratorRef, { repositoriesShared: currentShared + 1 });
+            }
+        });
 
         res.status(201).json({
             repositoryId: repoId,
@@ -195,27 +193,26 @@ router.delete('/:collaboratorEmail', async (req, res) => {
             });
         }
 
-        // Remove collaborator
-        await repoRef.update({
-            collaborators: admin.firestore.FieldValue.arrayRemove(collaboratorEmail),
-            updatedAt: new Date()
-        });
-
-        // Update collaborator's shared repositories count
+        // Remove collaborator and update user stats atomically
         const usersRef = db.collection('users');
         const userQuery = usersRef.where('email', '==', collaboratorEmail);
         const userSnap = await userQuery.get();
 
-        if (!userSnap.empty) {
-            const collaboratorUID = userSnap.docs[0].id;
-            const collaboratorRef = db.collection('users').doc(collaboratorUID);
-            const collaboratorData = userSnap.docs[0].data();
-
-            const currentShared = collaboratorData.repositoriesShared || 0;
-            await collaboratorRef.update({
-                repositoriesShared: Math.max(0, currentShared - 1)
+        await db.runTransaction(async (tx) => {
+            tx.update(repoRef, {
+                collaborators: admin.firestore.FieldValue.arrayRemove(collaboratorEmail),
+                updatedAt: new Date()
             });
-        }
+            if (!userSnap.empty) {
+                const collaboratorUID = userSnap.docs[0].id;
+                const collaboratorRef = db.collection('users').doc(collaboratorUID);
+                const collaboratorSnap = await tx.get(collaboratorRef);
+                if (collaboratorSnap.exists) {
+                    const currentShared = collaboratorSnap.data().repositoriesShared || 0;
+                    tx.update(collaboratorRef, { repositoriesShared: Math.max(0, currentShared - 1) });
+                }
+            }
+        });
 
         res.json({
             repositoryId: repoId,

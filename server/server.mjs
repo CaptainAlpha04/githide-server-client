@@ -20,7 +20,11 @@ initializeFirebase();
 const app = express();
 const PORT = process.env.PORT || 8000;
 const STORAGE_DIR = path.join(__dirname, 'storage');
-const AUTH_TOKEN = process.env.AUTH_TOKEN || 'githide-default-token-2026';
+const AUTH_TOKEN = process.env.AUTH_TOKEN;
+if (!AUTH_TOKEN) {
+    console.error('FATAL: AUTH_TOKEN environment variable is required but not set.');
+    process.exit(1);
+}
 const VALID_TOKENS = new Set([AUTH_TOKEN]);
 const REQUEST_LOG = [];
 const MAX_LOG_SIZE = 1000;
@@ -160,7 +164,23 @@ app.get('/api/v1/admin/logs', authenticate, (req, res) => {
     });
 });
 
-app.get('/api/v1/files', authenticate, async (req, res) => {
+const safeStorageDir = path.resolve(STORAGE_DIR);
+
+const validateFilename = (filename, res) => {
+    const resolved = path.resolve(safeStorageDir, filename);
+    if (!resolved.startsWith(safeStorageDir + path.sep)) {
+        res.status(400).json({ error: 'Invalid filename' });
+        return null;
+    }
+    return resolved;
+};
+
+// Identity endpoint — used by CLI to verify login and test connection
+app.get('/api/v1/auth/me', limiter, firebaseAuthMiddleware, (req, res) => {
+    res.json({ uid: req.user.uid, email: req.user.email });
+});
+
+app.get('/api/v1/files', limiter, firebaseAuthMiddleware, async (req, res) => {
     try {
         const files = await fs.readdir(STORAGE_DIR);
         const visibleFiles = files.filter(f => !f.startsWith('.'));
@@ -171,15 +191,13 @@ app.get('/api/v1/files', authenticate, async (req, res) => {
     }
 });
 
-app.post('/api/v1/files/:filename', authenticate, async (req, res) => {
+app.post('/api/v1/files/:filename', limiter, firebaseAuthMiddleware, async (req, res) => {
     const { filename } = req.params;
-    if (filename.includes('..') || filename.includes('/')) {
-        return res.status(400).json({ error: 'Invalid filename' });
-    }
-    const filePath = path.join(STORAGE_DIR, filename);
+    const filePath = validateFilename(filename, res);
+    if (!filePath) return;
     try {
         await fs.writeFile(filePath, req.body);
-        console.log(`Saved file: ${filename}, size: ${req.body.length}`);
+        console.log(`[${req.user.email}] Saved: ${filename} (${req.body.length} bytes)`);
         res.status(201).json({ status: 'uploaded' });
     } catch (err) {
         console.error(err);
@@ -187,12 +205,10 @@ app.post('/api/v1/files/:filename', authenticate, async (req, res) => {
     }
 });
 
-app.get('/api/v1/files/:filename', authenticate, async (req, res) => {
+app.get('/api/v1/files/:filename', limiter, firebaseAuthMiddleware, async (req, res) => {
     const { filename } = req.params;
-    if (filename.includes('..') || filename.includes('/')) {
-        return res.status(400).json({ error: 'Invalid filename' });
-    }
-    const filePath = path.join(STORAGE_DIR, filename);
+    const filePath = validateFilename(filename, res);
+    if (!filePath) return;
     try {
         if (!existsSync(filePath)) {
             return res.status(404).json({ error: 'File not found' });
@@ -233,7 +249,7 @@ app.listen(PORT, () => {
     console.log(`\nGitHide Server Started`);
     console.log(`Port: ${PORT}`);
     console.log(`Storage: ${STORAGE_DIR}`);
-    console.log(`Auth Token: ${AUTH_TOKEN.substring(0, 10)}...`);
+    console.log(`Auth Token: configured`);
     console.log(`Started: ${new Date().toISOString()}`);
     console.log(`\nServer ready and secure!\n`);
 });
