@@ -8,22 +8,9 @@ import { RepositoryCard } from '@/components/repository/RepositoryCard';
 import { CreateRepositoryForm } from '@/components/repository/CreateRepositoryForm';
 import { Button } from '@/components/ui/button';
 
-interface Repository {
-  id: string;
-  name: string;
-  description: string;
-  ownerId: string;
-  collaborators: string[];
-}
-
 export default function DashboardPage() {
   const router = useRouter();
   const { data: repositories = [], isLoading, error } = useRepositories();
-
-  const handleDelete = (repoId: string) => {
-    // TODO: Implement delete functionality
-    console.log('Delete repository:', repoId);
-  };
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -66,7 +53,7 @@ export default function DashboardPage() {
             <p className="text-gray-500">No repositories yet. Create your first one!</p>
           </div>
         ) : (
-          repositories.map((repo: any) => (
+          repositories.map((repo) => (
             <RepositoryCard
               key={repo.id}
               id={repo.id}
