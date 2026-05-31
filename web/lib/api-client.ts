@@ -37,16 +37,16 @@ const apiRequest = async (
         });
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw {
-                status: response.status,
-                ...error
-            };
+            const body = await response.json().catch(() => ({}));
+            const message = body.message || body.error || `Request failed (${response.status})`;
+            const err = new Error(message) as Error & { status: number; code?: string };
+            err.status = response.status;
+            err.code = body.code;
+            throw err;
         }
 
         return response.json();
-    } catch (error: any) {
-        console.error(`API Error [${method} ${endpoint}]:`, error);
+    } catch (error) {
         throw error;
     }
 };

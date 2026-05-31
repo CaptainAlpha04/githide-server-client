@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import morgan from 'morgan';
 import fs from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
@@ -33,7 +34,12 @@ if (!existsSync(STORAGE_DIR)) {
     mkdirSync(STORAGE_DIR);
 }
 
-app.use(cors());
+app.use(helmet());
+app.use(cors({
+    origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(morgan('dev'));
 app.use(express.raw({ type: 'application/octet-stream', limit: '50mb' }));
 app.use(express.json());

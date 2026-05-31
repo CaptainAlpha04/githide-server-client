@@ -28,8 +28,8 @@ export function CollaboratorManager({
           toast.success('Collaborator added successfully');
           setEmail('');
         },
-        onError: () => {
-          toast.error('Failed to add collaborator');
+        onError: (error: any) => {
+          toast.error(error?.message || 'Failed to add collaborator');
         },
       }
     );
@@ -42,8 +42,8 @@ export function CollaboratorManager({
         onSuccess: () => {
           toast.success('Collaborator removed successfully');
         },
-        onError: () => {
-          toast.error('Failed to remove collaborator');
+        onError: (error: any) => {
+          toast.error(error?.message || 'Failed to remove collaborator');
         },
       }
     );
