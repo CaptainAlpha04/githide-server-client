@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: githide-server
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8000
+      - key: AUTH_TOKEN
+        generateValue: true
+      - key: FIREBASE_SERVICE_ACCOUNT_KEY
+        sync: false
+      - key: ALLOWED_ORIGIN
+        sync: false
