@@ -2,6 +2,18 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, User } from 'firebase/auth';
 import { addDoc, arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, getFirestore, query, setDoc, updateDoc, where } from 'firebase/firestore';
 
+interface FirestoreUser {
+  id: string;
+  uid: string;
+  email: string;
+  displayName: string;
+  avatar: string;
+  repositoriesOwned: number;
+  repositoriesShared: number;
+  createdAt: Date;
+  lastLoginAt: Date;
+}
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -40,24 +52,24 @@ export const createUserDocument = async (user: User) => {
   }
 };
 
-export const getUserByEmail = async (email: string): Promise<any> => {
+export const getUserByEmail = async (email: string): Promise<FirestoreUser | null> => {
   const q = query(collection(db, 'users'), where('email', '==', email));
   const querySnapshot = await getDocs(q);
 
   if (!querySnapshot.empty) {
     const userDoc = querySnapshot.docs[0];
-    return { id: userDoc.id, ...userDoc.data() };
+    return { id: userDoc.id, ...userDoc.data() } as FirestoreUser;
   }
 
   return null;
 };
 
-export const getUserById = async (uid: string): Promise<any> => {
+export const getUserById = async (uid: string): Promise<FirestoreUser | null> => {
   const userRef = doc(db, 'users', uid);
   const userDoc = await getDoc(userRef);
 
   if (userDoc.exists()) {
-    return { id: userDoc.id, ...userDoc.data() };
+    return { id: userDoc.id, ...userDoc.data() } as FirestoreUser;
   }
 
   return null;
