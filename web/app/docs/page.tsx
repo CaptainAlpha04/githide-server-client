@@ -61,6 +61,11 @@ export default function DocsPage() {
                     Download CLI
                   </Link>
                 </Button>
+                <Button asChild variant="ghost" className="text-slate-700">
+                  <Link href="https://github.com/CaptainAlpha04/githide-server-client">
+                    Server repo
+                  </Link>
+                </Button>
               </div>
             </div>
           </section>

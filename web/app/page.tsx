@@ -58,6 +58,11 @@ export default function Home() {
                     Download CLI
                   </Link>
                 </Button>
+                <Button asChild variant="ghost" className="text-slate-700">
+                  <Link href="https://github.com/CaptainAlpha04/githide-server-client">
+                    Server repo
+                  </Link>
+                </Button>
               </div>
             </div>
 
@@ -158,7 +163,12 @@ git push`}
                 </Button>
                 <Button asChild variant="outline" className="border-slate-600 text-black">
                   <Link href="https://github.com/CaptainAlpha04/githide">
-                    Download
+                    Download CLI
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="border-slate-600 text-black">
+                  <Link href="https://github.com/CaptainAlpha04/githide-server-client">
+                    Server repo
                   </Link>
                 </Button>
               </div>
@@ -178,7 +188,13 @@ git push`}
                 className="hover:text-slate-700"
                 href="https://github.com/CaptainAlpha04/githide"
               >
-                GitHub
+                CLI
+              </Link>
+              <Link
+                className="hover:text-slate-700"
+                href="https://github.com/CaptainAlpha04/githide-server-client"
+              >
+                Server
               </Link>
             </div>
           </footer>
