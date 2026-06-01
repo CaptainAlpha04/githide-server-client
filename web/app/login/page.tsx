@@ -14,7 +14,7 @@ export default function LoginPage() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       }
     });
 

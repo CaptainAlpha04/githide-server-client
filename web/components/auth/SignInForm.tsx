@@ -23,7 +23,7 @@ export function SignInForm() {
       await createUserDocument(userCredential.user);
 
       toast.success('Signed in successfully');
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } catch (error) {
       toast.error('Failed to sign in');
       console.error(error);

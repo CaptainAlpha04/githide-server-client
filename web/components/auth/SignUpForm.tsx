@@ -27,7 +27,7 @@ export function SignUpForm() {
       await createUserDocument(userCredential.user);
 
       toast.success('Account created successfully');
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } catch (error) {
       toast.error('Failed to create account');
       console.error(error);
