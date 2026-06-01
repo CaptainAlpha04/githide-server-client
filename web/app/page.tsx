@@ -23,11 +23,7 @@ const steps = [
   "Collaborators pull and decrypt",
 ];
 
-const metrics = [
-  { label: "Encrypted locally", value: "AES-256-GCM" },
-  { label: "Key derivation", value: "Argon2id" },
-  { label: "Backends", value: "HTTP or GitHub" },
-];
+
 
 export default function Home() {
   return (
@@ -62,21 +58,6 @@ export default function Home() {
                     Download CLI
                   </Link>
                 </Button>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {metrics.map((metric) => (
-                  <div
-                    key={metric.label}
-                    className="rounded-2xl border border-slate-200 bg-white/70 p-4"
-                  >
-                    <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
-                      {metric.label}
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-800">
-                      {metric.value}
-                    </p>
-                  </div>
-                ))}
               </div>
             </div>
 
