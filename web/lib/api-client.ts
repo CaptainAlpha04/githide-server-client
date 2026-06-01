@@ -4,6 +4,14 @@
  */
 import { auth } from '@/lib/firebase';
 
+export interface Repository {
+  id: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  collaborators: string[];
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
 /**
@@ -22,7 +30,7 @@ export const getAuthToken = async () => {
 const apiRequest = async (
     endpoint: string,
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
-    body?: any
+    body?: Record<string, unknown>
 ) => {
     try {
         const token = await getAuthToken();
@@ -58,7 +66,7 @@ export const repositoryAPI = {
     /**
      * Get all repositories (owned + collaborated)
      */
-    getAll: () => apiRequest('/repositories'),
+    getAll: (): Promise<{ repositories: Repository[] }> => apiRequest('/repositories'),
 
     /**
      * Get specific repository

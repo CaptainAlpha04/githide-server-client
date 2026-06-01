@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { repositoryAPI, collaboratorAPI } from '@/lib/api-client';
+import { repositoryAPI, collaboratorAPI, type Repository } from '@/lib/api-client';
 import { toast } from 'sonner';
 
 const QUERY_KEYS = {
@@ -19,7 +19,7 @@ const QUERY_KEYS = {
 export const useRepositories = () => {
     return useQuery({
         queryKey: QUERY_KEYS.repositories,
-        queryFn: async () => {
+        queryFn: async (): Promise<Repository[]> => {
             const data = await repositoryAPI.getAll();
             return data.repositories || [];
         },
